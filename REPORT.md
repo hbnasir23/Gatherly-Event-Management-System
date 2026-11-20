@@ -112,8 +112,146 @@ Run `terraform destroy` after a demo to stop all charges.
 
 ## 8. Relation to the Eventra Project
 
-Gatherly reuses the cloud design from our earlier **Eventra** project (https://github.com/AunZaidii/Eventra-Event-Management-System): ALB → ECS Fargate → managed services, Terraform-managed, deployed by GitHub Actions. Eventra *was* deployed to AWS. Its CLI and console evidence (VPC, subnets, ALB target health, ECS tasks, autoscaling, CloudWatch, load test) is in that repository under `docs/evidence/`. It shows the same deployment approach working end to end. Those screenshots belong to the Eventra deployment and are referenced here as supporting evidence for the approach, not as screenshots of Gatherly.
+Gatherly reuses the cloud design from our earlier **Eventra** project (https://github.com/AunZaidii/Eventra-Event-Management-System): ALB → ECS Fargate → managed services, Terraform-managed, deployed by GitHub Actions. Eventra *was* deployed to AWS. Its CLI and console evidence (VPC, subnets, ALB target health, ECS tasks, autoscaling, CloudWatch, load test) is reproduced in **Appendix A** of this report. It shows the same deployment approach working end to end. Those screenshots belong to the Eventra deployment and are referenced here as supporting evidence for the approach, not as screenshots of Gatherly.
 
 ## 9. Conclusion
 
 Gatherly shows a complete cloud delivery workflow for a containerised web app: a Docker image with health checks, a Terraform-defined AWS environment with load balancing, autoscaling and logging, and a CI/CD pipeline that checks every change automatically and can deploy it to AWS.
+
+---
+
+## Appendix A — AWS Deployment Evidence (Eventra deployment)
+
+> **Note:** The screenshots below come from the AWS deployment of our **Eventra** project, which uses the same cloud design that Gatherly's Terraform follows (VPC → ALB → ECS Fargate → ECR, with autoscaling and CloudWatch). Resource names in the screenshots therefore say `eventra`. They show the deployment approach working end to end on real AWS infrastructure.
+
+### A.1 Architecture
+
+**Architecture diagram**
+
+![Architecture diagram](docs/evidence-eventra/architecture.png)
+
+### A.2 Identity and Networking
+
+**AWS identity used for deployment**
+
+![AWS identity used for deployment](docs/evidence-eventra/00-identity.png)
+
+**VPC**
+
+![VPC](docs/evidence-eventra/01-vpc.png)
+
+**Subnets across two availability zones**
+
+![Subnets across two availability zones](docs/evidence-eventra/02-subnets.png)
+
+**Route tables**
+
+![Route tables](docs/evidence-eventra/03-route-tables.png)
+
+**Internet gateway**
+
+![Internet gateway](docs/evidence-eventra/04-internet-gateway.png)
+
+**NAT instance**
+
+![NAT instance](docs/evidence-eventra/05-nat-instance.png)
+
+**Security groups**
+
+![Security groups](docs/evidence-eventra/06-security-groups.png)
+
+### A.3 Load Balancer
+
+**Application Load Balancer**
+
+![Application Load Balancer](docs/evidence-eventra/08-load-balancer.png)
+
+**Target health (all targets healthy)**
+
+![Target health (all targets healthy)](docs/evidence-eventra/10-target-health.png)
+
+### A.4 Containers (ECR + ECS Fargate)
+
+**Docker image build**
+
+![Docker image build](docs/evidence-eventra/docker-build.png)
+
+**ECR repositories**
+
+![ECR repositories](docs/evidence-eventra/15-ecr-repositories.png)
+
+**ECR images**
+
+![ECR images](docs/evidence-eventra/16-ecr-images.png)
+
+**ECS services**
+
+![ECS services](docs/evidence-eventra/11-ecs-services.png)
+
+**ECS running tasks**
+
+![ECS running tasks](docs/evidence-eventra/12-ecs-tasks.png)
+
+### A.5 Database, Secrets and IAM
+
+**RDS PostgreSQL**
+
+![RDS PostgreSQL](docs/evidence-eventra/14-rds.png)
+
+**Database not publicly accessible**
+
+![Database not publicly accessible](docs/evidence-eventra/21-db-not-public.png)
+
+**Secrets Manager**
+
+![Secrets Manager](docs/evidence-eventra/17-secrets.png)
+
+**IAM deploy role used by GitHub Actions**
+
+![IAM deploy role used by GitHub Actions](docs/evidence-eventra/18-iam-deploy-role.png)
+
+### A.6 Health Check
+
+**Health check endpoint through the load balancer**
+
+![Health check endpoint through the load balancer](docs/evidence-eventra/20-health-check.png)
+
+### A.7 Autoscaling and Load Test
+
+**Autoscaling configuration**
+
+![Autoscaling configuration](docs/evidence-eventra/13-autoscaling.png)
+
+**Load test traffic**
+
+![Load test traffic](docs/evidence-eventra/22-load-test-traffic.png)
+
+**Autoscaling timeline**
+
+![Autoscaling timeline](docs/evidence-eventra/23-autoscaling-timeline.png)
+
+**Scaling activities**
+
+![Scaling activities](docs/evidence-eventra/25-scaling-activities.png)
+
+### A.8 Monitoring (CloudWatch)
+
+**CloudWatch alarms and dashboard**
+
+![CloudWatch alarms and dashboard](docs/evidence-eventra/19-cloudwatch.png)
+
+**ECS CPU utilisation**
+
+![ECS CPU utilisation](docs/evidence-eventra/cw-ecs-cpu.png)
+
+**Healthy hosts**
+
+![Healthy hosts](docs/evidence-eventra/cw-healthy-hosts.png)
+
+**Request count**
+
+![Request count](docs/evidence-eventra/cw-requests.png)
+
+**Container logs**
+
+![Container logs](docs/evidence-eventra/24-cloudwatch-logs.png)
