@@ -1,5 +1,7 @@
 # Gatherly — Event Management System
 
+**Live site:** https://gatherly-one-jet.vercel.app
+
 A containerised web front end for an event platform, with infrastructure as code (Terraform, AWS) and a GitHub Actions CI/CD pipeline.
 
 ## Project structure

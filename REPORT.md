@@ -3,6 +3,7 @@
 **Course:** Cloud Computing
 **Project:** Gatherly — Event Management System
 **Date:** 20 November 2026
+**Live site:** https://gatherly-one-jet.vercel.app (auto-deployed by Vercel on every push to `main`)
 
 ---
 
