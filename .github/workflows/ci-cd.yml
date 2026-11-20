@@ -1,0 +1,87 @@
+name: Gatherly CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: gatherly-web
+
+jobs:
+  test:
+    name: Test page
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run smoke checks
+        run: sh tests/smoke.sh
+
+  build:
+    name: Build & run Docker image
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t $IMAGE_NAME:${{ github.sha }} .
+      - name: Start container
+        run: docker run -d --name gatherly -p 8080:80 $IMAGE_NAME:${{ github.sha }}
+      - name: Health check
+        run: |
+          for i in $(seq 1 10); do
+            curl -fs http://localhost:8080/healthz && break
+            sleep 2
+          done
+          curl -fs http://localhost:8080/ | grep -q "<h1>Gatherly</h1>"
+          echo "Container is serving the Gatherly page"
+
+  terraform:
+    name: Terraform validate
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Init (no backend)
+        run: terraform init -backend=false
+      - name: Validate
+        run: terraform validate
+
+  deploy:
+    name: Deploy to AWS
+    needs: [build, terraform]
+    # Runs only when the repository variable DEPLOY_ENABLED is set to "true"
+    # and AWS credentials are stored as repository secrets.
+    if: github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - uses: hashicorp/setup-terraform@v3
+      - name: Create ECR repository
+        working-directory: infra/terraform
+        run: |
+          terraform init
+          terraform apply -auto-approve -target=aws_ecr_repository.web
+      - name: Push image to ECR
+        id: ecr
+        run: |
+          REPO=$(terraform -chdir=infra/terraform output -raw ecr_repository_url)
+          aws ecr get-login-password | docker login --username AWS --password-stdin "${REPO%%/*}"
+          docker build -t "$REPO:${{ github.sha }}" .
+          docker push "$REPO:${{ github.sha }}"
+      - name: Apply infrastructure with new image
+        working-directory: infra/terraform
+        run: terraform apply -auto-approve -var="image_tag=${{ github.sha }}"
+      - name: Show URL
+        working-directory: infra/terraform
+        run: terraform output app_url
